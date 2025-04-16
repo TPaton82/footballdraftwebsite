@@ -9,20 +9,8 @@
         <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     </head>
     <body>
-        <div class="unpick">
-            <h1>Unpick</h1>
-            <form action="{{ url_for('unpick') }}" method="post">
-                <label for="name">
-                    <i class="fas fa-user"></i>
-                </label>
-                <input type="text" name="name" placeholder="Name" id="name" required>
-                <label for="pick">
-                    <i class="fas fa-user-plus"></i>
-                </label>
-                <input type="text" name="pick" placeholder="Pick" id="pick" required>
-                <div class="msg">{{ msg }}</div>
-                <input type="submit" value="Submit">
-            </form>
+        <div class="rules">
+            <h1>Rules</h1>
         </div>
     </body>
 </html>

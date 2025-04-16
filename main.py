@@ -3,13 +3,33 @@ import os
 import re
 from functools import wraps
 from math import sqrt
-import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 
-from db import add_pick, remove_pick, get_user_picks, get_draft_order, get_user, create_user, get_player_info, get_next_to_pick, get_all_players, get_all_player_points
-from utils.utils import send_telegram_message, get_cloud_secret, create_secure_password, create_path_to_image_html, get_data, refresh_data, validate_pick
+from db import (
+    add_pick, 
+    remove_pick, 
+    get_user_picks, 
+    get_draft_order, 
+    get_user, 
+    create_user, 
+    get_player_info, 
+    get_next_to_pick, 
+    get_all_players, 
+    get_all_player_points, 
+    set_draft_order,
+    get_total_points,
+    refresh_data
+)
+
+from utils.utils import (
+    send_telegram_message, 
+    get_cloud_secret, 
+    create_secure_password, 
+    create_path_to_image_html, 
+    validate_pick
+)
 
 app = Flask(__name__)
 
@@ -45,7 +65,7 @@ def logged_in(func):
 @app.route('/', methods=['GET', 'POST'])
 @logged_in
 def landing_page():
-    return redirect(url_for("leaderboard"))
+    return redirect(url_for("standings"))
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -112,10 +132,10 @@ def login():
                 # Create session data, we can access this data in other routes
                 session['loggedin'] = True
                 session['user_id'] = user['user_id']
-                session['username'] = user['username']
+                session['username'] = user['name']
 
                 # Redirect to leaderboard
-                return redirect(url_for("scores"))
+                return redirect(url_for("standings"))
             else:
                 msg = 'Incorrect username/password!'
 
@@ -147,6 +167,22 @@ def unpick():
         msg = "Incorrect username or pick!"
 
     return render_template("unpick.html", msg=msg)
+
+
+@app.route('/draft_order', methods=['GET', 'POST'])
+@logged_in
+def draft_order():
+    msg = ""
+
+    if request.method == "POST" and {"first", "second", "third", "fourth", "fifth", "sixth"}.issubset(set(request.form.keys())):
+        set_draft_order(mysql.connection, request)
+    else:
+        msg = 'Please input all players!'
+
+    return render_template(
+        template_name_or_list="draft_order.html",
+        msg=msg
+    )
 
 
 @app.route('/pick', methods=['GET', 'POST'])
@@ -193,10 +229,32 @@ def pick():
 @app.route("/events")
 @logged_in
 def events():
+    return render_template(
+        template_name_or_list="events.html",
+        events=(
+            pd.DataFrame()
+            .to_html(
+                index=False,
+                escape=False,
+                classes='events',
+                table_id="events"
+            )
+            .replace('border="1"', 'border="0"')
+        )
+    )
 
 @app.route("/transfer")
 @logged_in
 def transfer():
+    msg = ""
+    all_players = get_all_players(mysql.connection)
+    return render_template(template_name_or_list="transfer.html", players=all_players, msg=msg)
+
+
+@app.route("/rules")
+@logged_in
+def rules():
+    return render_template(template_name_or_list="rules.html")
 
 
 @app.route("/players")
@@ -207,14 +265,14 @@ def players():
 
     return render_template(
         template_name_or_list="players.html",
-        scoreboard=(
+        players=(
             player_points
             .to_html(
                 index=False,
                 escape=False,
                 classes='players',
                 table_id="players",
-                formatters={"Player": create_path_to_image_html}
+                #formatters={"Player": create_path_to_image_html}
             )
             .replace('border="1"', 'border="0"')
         )
@@ -224,86 +282,18 @@ def players():
 @app.route("/standings")
 @logged_in
 def standings():
-    """Create leaderboard page"""
-    refresh_scoreboard()
+    """Create standings page"""
+    refresh_data(mysql.connection)
 
-    total = get_dd_picks(mysql.connection)
-    prizes = get_prizes(mysql.connection)
-    scoreboard = get_scoreboard(mysql.connection)
-
-    latest_scores = scoreboard.sort_values('created_date').drop_duplicates(['Player'], keep='last')
-    latest_scores_dict = latest_scores.set_index("Player").to_dict()
-
-    total["Position"] = total["Player"].map(latest_scores_dict["Position"])
-    total["Score"] = total["Player"].map(latest_scores_dict["Score"])
-    total["Headshot"] = total["Player"].map(latest_scores_dict["Headshot"])
-
-    # Calculate earnings for each position (to handle ties)
-    calculated_prizes = {}
-    calculated_sqrt_prizes = {}
-    for pos, data in latest_scores.groupby("Position"):
-        # if the position is not tied, just return the prize for that position
-        if "T" not in pos:
-            calculated_prizes[pos] = prizes.get(pos, 0)
-            calculated_sqrt_prizes[pos] = sqrt(prizes.get(pos, 0))
-
-        # Otherwise, calculate the average of all tied players
-        else:
-            num_players = len(data)
-            prize_to_get = str(pos).replace('T', '')
-            total_prize = sum([prizes.get(str(int(prize_to_get) + i), 0) for i in range(0, num_players)])
-            calculated_prizes[pos] = total_prize // num_players
-            calculated_sqrt_prizes[pos] = sqrt(total_prize // num_players)
-
-    # Now apply the calculated prize money to the total DataFrame
-    total["Prize Money"] = total["Position"].map(calculated_prizes)
-    total["Sqrt Prize Money"] = total["Position"].map(calculated_sqrt_prizes)
-
-    dd_picks = []
-    for (name, teamname), df in total.groupby(['Name', 'TeamName']):
-
-        player_standings = {"Name": f"{teamname}<br>({name})"}
-        total_sum = 0
-        total_sqrt_sum = 0
-
-        for idx, (_, row) in enumerate(df.iterrows(), 1):
-            player_standings[f"Pick {idx}"] = [
-                row.Headshot, 
-                f"{row.Position.replace('-', 'N/A')}: {row['Player']} {row['Score']}<br>{'${:,}'.format(row['Prize Money'])}"
-            ]
-
-            total_sum += row['Prize Money']
-            total_sqrt_sum += row['Sqrt Prize Money']
-
-        player_standings['TotalInt'] = total_sum
-        player_standings['Total'] = "${:,}".format(total_sum)
-        player_standings['TotalIntSqrt'] = total_sqrt_sum
-        player_standings['TotalSqrt'] = "${:,}".format(int(total_sqrt_sum))
-        dd_picks.append(player_standings)
-
-    if len(dd_picks) > 0:
-        dd_picks_df = pd.DataFrame(dd_picks).sort_values('Total')
-        dd_picks_df.sort_values("TotalIntSqrt", ascending=False, inplace=True)
-        player_cols = sorted([col for col in dd_picks_df.columns if "Pick" in col])
-        dd_picks_df = dd_picks_df[["Name", "TotalSqrt", "Total"] + player_cols]
-    else:
-        dd_picks_df = pd.DataFrame()
+    total_points = get_total_points(mysql.connection)
 
     return render_template(
-        template_name_or_list="leaderboard.html",
-        dd_picks=dd_picks_df.to_html(
+        template_name_or_list="standings.html",
+        total_points=total_points.to_html(
             index=False,
             escape=False,
-            classes='leaderboard',
-            formatters={
-                "Pick 1": create_path_to_image_html,
-                "Pick 2": create_path_to_image_html,
-                "Pick 3": create_path_to_image_html,
-                "Pick 4": create_path_to_image_html,
-                "Pick 5": create_path_to_image_html
-            }
-        )
-        .replace('border="1"', 'border="0"')
+            classes='standings'
+        ).replace('border="1"', 'border="0"')
     )
 
 

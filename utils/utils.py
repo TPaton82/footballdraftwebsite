@@ -1,12 +1,11 @@
 import requests
 from collections import defaultdict
 from google.cloud import secretmanager
-from config import PROJECT_ID, TELEGRAM_CHAT_ID, TELEGRAM_URL, MAX_PICKS
+from utils.config import PROJECT_ID, TELEGRAM_CHAT_ID, TELEGRAM_URL, MAX_PICKS
 import os
 import hashlib
-import json
 from functools import wraps
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 
@@ -51,7 +50,7 @@ def create_path_to_image_html(row):
     """
 
 
-def get_data():
+# def get_data():
     # data = json.loads(requests.get("https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard").content)
     # competitors = data['events'][0]['competitions'][0]['competitors']
 
@@ -72,21 +71,8 @@ def get_data():
     # return output
 
 
-def refresh_data():
-    # """Refresh scores data"""
-    # cursor = mysql.connect.cursor(DictCursor)
 
-    # # get latest scoreboard state
-    # cursor.execute("select * from scoreboard")
-
-    # existing_scoreboard = cursor.fetchall()
-
-    # if len(existing_scoreboard) == 0:
-    #     last_update = pd.to_datetime("1970-01-01")
-    # else:
-    #     last_update = pd.to_datetime(existing_scoreboard[-1]['created_date'])
-
-def validate_pick(player_pick: Dict, existing_picks: List[Dict]) -> List[bool, str]:
+def validate_pick(player_pick: Dict, existing_picks: List[Dict]) -> Tuple[bool, str]:
     """
     Validate if the player pick is already in the existing picks.
 
