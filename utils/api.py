@@ -23,7 +23,7 @@ def get_events_for_fixture(fixture_id):
         })
 
 
-def get_fixtures_for_league(league_name):
+def get_fixtures_for_league():
     response = requests.request("GET", API_URL + f"fixtures?league={API_LEAGUE_ID}&season={YEAR}", headers=HEADERS)
     fixtures = response.json()['response']
 
