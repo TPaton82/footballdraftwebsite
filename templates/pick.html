@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+{% extends 'layout.html' %}
+
+{% block content %}
+<html lang="eng">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css">
+    <head>
+        <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    </head>
+    <body>
+        <div class="pick">
+            <h1>Pick Your Player</h1>
+            <form action="{{ url_for('pick') }}" method="post">
+
+                <label for="player">
+                    <i class="fas fa-user-plus"></i>
+                </label>
+                <input type="text", list="player" name="player" placeholder="Select player" required>
+                <datalist id="player">
+                    {% for player in playerlist %}
+                        <option value="{{ player }}">
+                    {% endfor %}
+                </datalist>
+                <div class="msg">{{ msg }}</div>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </body>
+</html>
+{% endblock %}

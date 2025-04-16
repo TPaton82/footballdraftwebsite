@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<html lang="eng">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css">
+    <head>
+        <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    </head>
+    <body>
+    <div>
+        <h1>Standings</h1>
+        <div class="leaderboard-container">
+            {{ dd_picks|safe }}
+        </div>
+    </div>
+    </body>
+</html>
+{% endblock %}

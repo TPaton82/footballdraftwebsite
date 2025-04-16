@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="eng">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css">
+    <head>
+        <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+        <title>Masters Draft</title>
+    </head>
+    <body class="loggedin">
+        <nav class="navtop">
+            <div>
+                <h1>World Cup 2025 Draft</h1>
+                <a href="{{ url_for('standings') }}"><i class="fas fa-home"></i></a>
+                <a href="{{ url_for('players') }}"><i class="fas fa-golf-ball-tee"></i></a>
+                <a href="{{ url_for('events') }}"><i class="fas fa-golf-ball-tee"></i></a>
+                <a href="{{ url_for('pick') }}"><i class="fas fa-user-plus"></i></a>
+                <a href="{{ url_for('transfer') }}"><i class="fas fa-user-plus"></i></a>
+                <a href="{{ url_for('rules') }}"><i class="fas fa-user-plus"></i></a>
+                <a href="{{ url_for('logout') }}" ><i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </nav>
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </body>
+</html>

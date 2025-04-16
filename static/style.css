@@ -1,0 +1,234 @@
+* {
+  	box-sizing: border-box;
+  	font-family: -apple-system, BlinkMacSystemFont, "segoe ui", roboto, oxygen, ubuntu, cantarell, "fira sans", "droid sans", "helvetica neue", Arial, sans-serif;
+  	font-size: min(calc(1vw + 1vh), 16px);
+  	-webkit-font-smoothing: antialiased;
+  	-moz-osx-font-smoothing: grayscale;
+}
+body {
+    text-align: center;
+    background-image: url('background.jpg');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    min-height: 100%;
+    height: 100%;
+    overflow-x: hidden;
+}
+#playerSelector {
+  background-image: url('/static/searchicon.png');
+  background-position: 10px 12px;
+  background-repeat: no-repeat;
+  width: 94%;
+  padding: 12px 20px 12px 40px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+}
+.login, .register, .pick, .unpick {
+  	width: min(500px, 80%);
+  	background-color: #ffffff;
+  	box-shadow: 0 0 9px 0 rgba(0, 0, 0, 0.3);
+  	margin: auto
+}
+.login h1, .register h1, .pick h1, .unpick h1 {
+  	text-align: center;
+  	color: #5b6574;
+  	font-size: 24px;
+  	padding: 20px 0 20px 0;
+  	border-bottom: 1px solid #dee0e4;
+}
+.login .links, .register .links, .pick .links, .unpick .links {
+  	display: flex;
+  	padding: 0 15px;
+}
+.login .links a, .register .links a, .pick .links a, .unpick .links a {
+  	color: #adb2ba;
+  	text-decoration: none;
+  	display: inline-flex;
+  	padding: 0 10px 10px 10px;
+  	font-weight: bold;
+}
+.login .links a:hover, .register .links a:hover, .pick .links a:hover, .unpick .links a:hover {
+  	color: #9da3ac;
+}
+.login .links a.active, .register .links a.active, .pick .links a.active, .unpick .links a.active {
+  	border-bottom: 3px solid #04AA6D;
+  	color: #04AA6D;
+}
+.login form, .register form, .pick form, .unpick form {
+  	display: flex;
+  	flex-wrap: wrap;
+  	justify-content: center;
+  	padding-top: 20px;
+}
+.login form label, .register form label, .pick form label, .unpick form label {
+  	display: flex;
+  	justify-content: center;
+  	align-items: center;
+  	width: 12%;
+  	height: 50px;
+  	background-color: #04AA6D;
+  	color: #ffffff;
+}
+.login form input[type="password"], .login form input[type="text"], .register form input[type="password"], .register form input[type="text"], .pick form input[type="text"], .unpick form input[type="text"] {
+  	width: 80%;
+  	height: 50px;
+  	border: 1px solid #dee0e4;
+  	margin-bottom: 20px;
+  	padding: 0 15px;
+}
+.login form input[type="submit"], .register form input[type="submit"], .pick form input[type="submit"], .unpick form input[type="submit"] {
+  	width: 100%;
+  	padding: 15px;
+  	margin-top: 20px;
+  	background-color: #04AA6D;
+  	border: 0;
+  	cursor: pointer;
+  	font-weight: bold;
+  	color: #ffffff;
+  	transition: background-color 0.2s;
+}
+.login form input[type="submit"]:hover, .register form input[type="submit"]:hover, .pick form input[type="submit"]:hover, .unpick form input[type="submit"]:hover {
+  	background-color: #c1c4c8;
+  	transition: background-color 0.2s;
+}
+.navtop {
+  	background-color: #04AA6D;
+  	height: 60px;
+  	width: 100%;
+}
+.navtop div {
+  	display: flex;
+  	margin: 0 auto;
+  	width: 90%;
+  	height: 100%;
+}
+.navtop div h1, .navtop div a {
+  	display: inline-flex;
+  	align-items: center;
+}
+.navtop div h1 {
+  	flex: 1;
+  	font-size: 24px;
+    padding: 10px;
+ 	margin: 0;
+  	color: #eaebed;
+  	font-weight: normal;
+}
+.navtop div a {
+  	padding: 0 20px;
+  	text-decoration: none;
+  	color: #eaebed;
+  	font-weight: bold;
+}
+.navtop div a i {
+  	padding: 2px 8px 0 0;
+}
+.navtop div a:hover {
+  	color: #c1c4c8;
+}
+th {
+    text-align: center;
+}
+.dataframe {
+    margin: 10px auto;
+}
+.scoreboard, .leaderboard {
+    width: 98%;
+    padding: 10px
+}
+.dataframe td, .dataframe th {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+.dataframe tr:nth-child(even){background-color: #f2f2f2;}
+.dataframe tr:nth-child(odd){background-color: #ddd;}
+.dataframe th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: center;
+  background-color: #04AA6D;
+  color: white;
+}
+
+h1 {
+  color: #f2f2f2;
+}
+
+.collapsible_picks {
+  background-color: #04AA6D;
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+}
+
+collapsible_picks.active, .collapsible_picks:hover {
+  background-color: #c1c4c8;
+}
+
+.collapsible_picks:after {
+  content: '\002B';
+  color: white;
+  font-weight: bold;
+  float: right;
+  margin-left: 5px;
+}
+
+collapsible_picks.active:after {
+  content: "\2212";
+}
+
+.pick_content {
+  padding: 0 18px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+  background-color: #f1f1f1;
+}
+
+.image-text-container {
+  display: flex;
+  align-items: center;
+}
+
+.image {
+  margin-right: 10px;
+}
+
+.scoreboard-container {
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.leaderboard-container {
+  max-width: 100vw;
+  overflow-x: auto;
+}
+
+@media screen and (max-width: 600px) {
+    .login h1, .register h1, .pick h1, .unpick h1 {
+        color: #5b6574;
+        font-size: 16px;
+    }
+    .login .links, .register .links, .pick .links, .unpick .links {
+        padding: 0 10px;
+    }
+    .navtop div h1 {
+        font-size: 16px;
+        padding: 5px;
+    }
+    .navtop div a i {
+        padding: 1px 4px 0 0;
+    }
+    .dataframe td, .dataframe th {
+      border: 1px solid #ddd;
+      padding: 2px;
+      text-align: center;
+    }
+}
