@@ -8,13 +8,47 @@ TELEGRAM_URL = "https://api.telegram.org/bot7829344666:AAGLCcj0F4lIvpiRGvyBsIE0g
 
 API_URL = "https://v3.football.api-sports.io/"
 
-YEAR = 2025
+YEAR = 2022
 
-API_LEAGUE_ID = 39 # Premier League
+PREMIER_LEAGUE_LEAGUE_ID = 39
+WORLD_CUP_LEAGUE_ID = 1
+
+ALL_EVENTS = [
+    ("Goal", "Goalkeeper", 10),
+    ("Goal", "Defender", 7),
+    ("Goal", "Midfielder", 6),
+    ("Goal", "Attacker", 5),
+    ("Assist", "Goalkeeper", 3),
+    ("Assist", "Defender", 3),
+    ("Assist", "Midfielder", 3),
+    ("Assist", "Attacker", 3),
+    ("Clean Sheet", "Goalkeeper", 5),
+    ("Clean Sheet", "Defender", 4),
+    ("Penalty", "Goalkeeper", 3),
+    ("Penalty", "Defender", 2),
+    ("Penalty", "Midfielder", 2),
+    ("Penalty", "Attacker", 2),
+    ("Penalty Save", "Goalkeeper", 2),
+    ("Penalty Save", "Defender", 10),
+    ("Penalty Save", "Midfielder", 10),
+    ("Penalty Save", "Attacker", 10),
+    ("Own Goal", "Goalkeeper", -1),
+    ("Own Goal", "Defender", -2),
+    ("Own Goal", "Midfielder", -2),
+    ("Own Goal", "Attacker", -2),
+    ("Missed Penalty", "Goalkeeper", -2),
+    ("Missed Penalty", "Defender", -2),
+    ("Missed Penalty", "Midfielder", -2),
+    ("Missed Penalty", "Attacker", -2),
+    ("Red Card", "Goalkeeper", -2),
+    ("Red Card", "Defender", -2),
+    ("Red Card", "Midfielder", -2),
+    ("Red Card", "Attacker", -2)
+]
 
 MAX_PICKS = {
-    "GK": 1,
-    "DF": 5,
-    "MF": 5,
-    "FW": 3
+    "Goalkeeper": 1,
+    "Defender": 5,
+    "Midfielder": 5,
+    "Attacker": 3
 }

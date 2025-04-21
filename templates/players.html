@@ -18,23 +18,26 @@
     </body>
     <script>
         function playerSelector() {
-          // Declare variables
-          var input, filter, table, tr, td, i, txtValue;
-          input = document.getElementById("playerSelector");
+          const input = document.getElementById("playerSelector");
           filter = input.value.toUpperCase();
-          table = document.getElementById("players");
-          tr = table.getElementsByTagName("tr");
+          const table = document.getElementById("players");
+          const rows = table.getElementsByTagName("tr");
 
-          // Loop through all table rows, and hide those who don't match the search query
-          for (i = 0; i < tr.length; i++) {
-            td = tr[i].getElementsByTagName("td")[0];
-            if (td) {
-              txtValue = td.textContent || td.innerText;
-              if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-              } else {
-                tr[i].style.display = "none";
-              }
+          for (let i = 1; i < rows.length; i++) { // skip header row
+            const cells = rows[i].getElementsByTagName("td");
+            const name = cells[0].textContent.toLowerCase();
+            const position = cells[1].textContent.toLowerCase();
+            const team = cells[2].textContent.toLowerCase();
+
+            const nameMatch = name.includes(filter.toLowerCase());
+            const positionMatch = position.includes(filter.toLowerCase());
+            const teamMatch = team.includes(filter.toLowerCase());
+
+            // Show row if EITHER filter matches
+            if (nameMatch || positionMatch || teamMatch) {
+              rows[i].style.display = "";
+            } else {
+              rows[i].style.display = "none";
             }
           }
         }

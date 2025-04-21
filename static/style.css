@@ -135,6 +135,7 @@ th {
     margin: 10px auto;
 }
 .players, .standings {
+	table-layout: fixed;
     width: 98%;
     padding: 10px
 }

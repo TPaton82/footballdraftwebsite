@@ -4,7 +4,6 @@ from google.cloud import secretmanager
 from utils.config import PROJECT_ID, TELEGRAM_CHAT_ID, TELEGRAM_URL, MAX_PICKS
 import os
 import hashlib
-from functools import wraps
 from typing import List, Dict, Tuple
 
 
@@ -21,7 +20,7 @@ def send_telegram_message(text):
 
 def get_cloud_secret(secret_name):
     client = secretmanager.SecretManagerServiceClient()
-    response = client.access_secret_version(name=f"projects/{PROJECT_ID}/secrets/{secret_name}/versions/1")
+    response = client.access_secret_version(name=f"projects/{PROJECT_ID}/secrets/{secret_name}/versions/latest")
     return response.payload.data.decode("UTF-8")
 
 

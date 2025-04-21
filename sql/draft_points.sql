@@ -24,9 +24,10 @@ DROP TABLE IF EXISTS `points`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `points` (
   `points_id` int NOT NULL AUTO_INCREMENT,
+  `fixture_id` int NOT NULL,
   `player_id` int NOT NULL,
   `event_id` int NOT NULL,
-  `event_time` date NOT NULL,
+  `event_time` datetime NOT NULL,
   PRIMARY KEY (`points_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

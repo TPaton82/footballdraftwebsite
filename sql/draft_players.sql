@@ -23,9 +23,10 @@ DROP TABLE IF EXISTS `players`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `players` (
-  `player_id` int NOT NULL AUTO_INCREMENT,
+  `player_id` int NOT NULL,
   `name` varchar(50) NOT NULL,
-  `position` varchar(3) NOT NULL,
+  `position` varchar(20) NOT NULL,
+  `headshot` varchar(100) NOT NULL,
   `team_id` int NOT NULL,
   PRIMARY KEY (`player_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

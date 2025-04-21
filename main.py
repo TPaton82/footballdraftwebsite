@@ -2,7 +2,6 @@ import hashlib
 import os
 import re
 from functools import wraps
-from math import sqrt
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
@@ -19,7 +18,7 @@ from db import (
     get_all_players, 
     get_all_player_points, 
     set_draft_order,
-    get_total_points,
+    get_standings,
     refresh_data
 )
 
@@ -283,13 +282,13 @@ def players():
 @logged_in
 def standings():
     """Create standings page"""
-    refresh_data(mysql.connection)
+    #refresh_data(mysql.connection)
 
-    total_points = get_total_points(mysql.connection)
+    standings = get_standings(mysql.connection)
 
     return render_template(
         template_name_or_list="standings.html",
-        total_points=total_points.to_html(
+        total_points=standings.to_html(
             index=False,
             escape=False,
             classes='standings'
