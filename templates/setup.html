@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+{% extends 'layout.html' %}
+
+{% block content %}
+<html lang="eng">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css">
+    <head>
+        <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    </head>
+    <body>
+        <div class="setup">
+            <h1>Setup</h1>
+            <form action="{{ url_for('setup') }}" method="post">
+
+                <label for="league_id">
+                    <i class="fas fa-user-plus"></i>
+                </label>
+                <input type="text", list="league_id" name="league_id" placeholder="Select LeagueID" required>
+                <label for="year">
+                    <i class="fas fa-user-plus"></i>
+                </label>
+                <input type="text", list="year" name="year" placeholder="Select Year" required>
+                <div class="msg">{{ msg }}</div>
+                <input type="submit" value="Setup Draft">
+            </form>
+        </div>
+    </body>
+</html>
+{% endblock %}

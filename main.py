@@ -5,22 +5,7 @@ from functools import wraps
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
-
-from db import (
-    add_pick, 
-    remove_pick, 
-    get_user_picks, 
-    get_draft_order, 
-    get_user, 
-    create_user, 
-    get_player_info, 
-    get_next_to_pick, 
-    get_all_players, 
-    get_all_player_points, 
-    set_draft_order,
-    get_standings,
-    refresh_data
-)
+import db 
 
 from utils.utils import (
     send_telegram_message, 
@@ -77,7 +62,7 @@ def register():
         password = request.form['password']
 
         # Check if account exists
-        user = get_user(mysql.connection, name)
+        user = db.get_user(mysql.connection, name)
 
         # If account exists show error and validation checks
         if user:
@@ -91,7 +76,7 @@ def register():
             salt, password_hash, hash_algo, iterations = create_secure_password(password, app.secret_key)
 
             # Account doesn't exist, and the form data is valid, so insert the new account into the accounts table
-            create_user(mysql.connection, name, password_hash, salt, hash_algo, iterations)
+            db.create_user(mysql.connection, name, password_hash, salt, hash_algo, iterations)
             return render_template('login.html', msg='You have successfully registered!')
 
     elif request.method == 'POST':
@@ -112,7 +97,7 @@ def login():
         password = request.form['password']
 
         # Check if user exists
-        user = get_user(mysql.connection, name)
+        user = db.get_user(mysql.connection, name)
 
         if not user:
             # Account doesn't exist
@@ -159,29 +144,13 @@ def unpick():
     if request.method == 'POST' and "name" in request.form and "pick" in request.form:
         name = request.form['name']
         player_pick = request.form['pick']
-        remove_pick(mysql.connection, name, player_pick)
+        db.remove_pick(mysql.connection, name, player_pick)
         return redirect(url_for("leaderboard"))
     
     elif request.method == "POST":
         msg = "Incorrect username or pick!"
 
     return render_template("unpick.html", msg=msg)
-
-
-@app.route('/draft_order', methods=['GET', 'POST'])
-@logged_in
-def draft_order():
-    msg = ""
-
-    if request.method == "POST" and {"first", "second", "third", "fourth", "fifth", "sixth"}.issubset(set(request.form.keys())):
-        set_draft_order(mysql.connection, request)
-    else:
-        msg = 'Please input all players!'
-
-    return render_template(
-        template_name_or_list="draft_order.html",
-        msg=msg
-    )
 
 
 @app.route('/pick', methods=['GET', 'POST'])
@@ -191,32 +160,32 @@ def pick():
 
     if request.method == 'POST' and 'player' in request.form:
 
-        draft_order = get_draft_order(mysql.connection)
+        draft_order = db.get_draft_order(mysql.connection)
 
         # Check to see if it's this users pick next
-        next_to_pick = get_next_to_pick(mysql.connection, draft_order)
+        next_to_pick = db.get_next_to_pick(mysql.connection, draft_order)
 
         if next_to_pick != session["username"]:
             msg = f"It's not your pick, wait for `{next_to_pick}` to pick"
 
         else:
             # Check to see if we are allowed to pick this player
-            player_info = get_player_info(request.form['player'])
-            player_existing_picks = get_user_picks(mysql.connection, session["username"])
+            player_info = db.get_player_info(mysql.connection, request.form['player'])
+            player_existing_picks = db.get_user_picks(mysql.connection, session["username"])
             valid_pick, error_reason = validate_pick(player_info, player_existing_picks)
 
             if not valid_pick:
                 msg = error_reason
             else:
-                add_pick(mysql.connection, session["username"], player_info["name"])
+                db.add_pick(mysql.connection, session["username"], player_info["name"])
 
-                next_to_pick = get_next_to_pick(mysql.connection, draft_order)
+                next_to_pick = db.get_next_to_pick(mysql.connection, draft_order)
                 if next_to_pick is not None:
                     send_telegram_message(f"Waiting for `{next_to_pick}` to pick...")
 
                 return redirect(url_for("leaderboard"))
 
-    all_players = get_all_players(mysql.connection)
+    all_players = db.get_all_players(mysql.connection)
 
     return render_template(
         template_name_or_list="pick.html",
@@ -246,7 +215,7 @@ def events():
 @logged_in
 def transfer():
     msg = ""
-    all_players = get_all_players(mysql.connection)
+    all_players = db.get_all_players(mysql.connection)
     return render_template(template_name_or_list="transfer.html", players=all_players, msg=msg)
 
 
@@ -260,7 +229,7 @@ def rules():
 @logged_in
 def players():
     """Create players page"""
-    player_points = get_all_player_points(mysql.connection)
+    player_points = db.get_all_player_points(mysql.connection)
 
     return render_template(
         template_name_or_list="players.html",
@@ -284,7 +253,7 @@ def standings():
     """Create standings page"""
     #refresh_data(mysql.connection)
 
-    standings = get_standings(mysql.connection)
+    standings = db.get_standings(mysql.connection)
 
     return render_template(
         template_name_or_list="standings.html",
@@ -295,6 +264,30 @@ def standings():
         ).replace('border="1"', 'border="0"')
     )
 
+
+@app.route("/setup", methods=['GET', 'POST'])
+@logged_in
+def setup():
+    """
+    Setup data and create draft order.
+    USE CAREFULLY - THIS WILL DELETE ALL DATA IN TABLES AND REFRESH
+    """
+    msg = ""
+
+    if request.method == 'POST' and 'league_id' in request.form and 'year' in request.form:
+
+        if session["username"] != "Tom":
+            msg = "You are not allowed to do this!"
+        else:
+            league_id = request.form['league_id']
+            year = request.form['year']
+            msg = db.initialize_tables(mysql.connection, league_id, year, refresh=True)
+            msg += db.set_draft_order(mysql.connection)
+
+    return render_template(
+        template_name_or_list="setup.html",
+        msg=msg
+    )
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8080, debug=True)

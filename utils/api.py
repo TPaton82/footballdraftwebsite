@@ -8,7 +8,7 @@ Notes:
 
 import requests
 import pandas as pd
-from utils.config import API_URL, WORLD_CUP_LEAGUE_ID, YEAR
+from utils.config import API_URL
 from utils.utils import get_cloud_secret
 from typing import List
 from time import sleep
@@ -38,9 +38,9 @@ def get_all_events_for_fixture(fixture_id):
     return all_events
 
 
-def get_all_fixtures() -> pd.DataFrame:
+def get_all_fixtures(league_id, year) -> pd.DataFrame:
     """Get all fixtures for the given league for the given year"""
-    response = requests.request("GET", API_URL + f"fixtures?league={WORLD_CUP_LEAGUE_ID}&season={YEAR}", headers=HEADERS)
+    response = requests.request("GET", API_URL + f"fixtures?league={league_id}&season={year}", headers=HEADERS)
     fixtures = response.json()['response']
 
     all_fixtures = []
@@ -59,9 +59,9 @@ def get_all_fixtures() -> pd.DataFrame:
     return all_fixtures_df
 
 
-def get_all_teams():
+def get_all_teams(league_id, year):
     """Get all teams for the given league for the given year"""
-    response = requests.request("GET", API_URL + f"teams?league={WORLD_CUP_LEAGUE_ID}&season={YEAR}", headers=HEADERS)
+    response = requests.request("GET", API_URL + f"teams?league={league_id}&season={year}", headers=HEADERS)
     teams = response.json()['response']
 
     all_teams = []
@@ -81,7 +81,7 @@ def get_all_teams():
 def get_all_players(team_ids: List) -> pd.DataFrame:
     """Get all players for the given team id's"""
     all_players = []
-    for team_id in team_ids:
+    for team_id in team_ids[:5]:
         sleep(10) # To avoid hitting the API rate limit
         response = requests.request("GET", API_URL + f"players/squads?team={team_id}", headers=HEADERS)
         players = response.json()['response'][0]['players']
@@ -89,10 +89,10 @@ def get_all_players(team_ids: List) -> pd.DataFrame:
         for player in players:
             all_players.append({
                 "player_id": player["id"],
-                "team_id": team_id,
                 "name": player["name"],
                 "position": player["position"],
-                "headshot": player["photo"]
+                "headshot": player["photo"],
+                "team_id": team_id,
             })
 
         print(f"Found {len(players)} players for team id: {team_id}")

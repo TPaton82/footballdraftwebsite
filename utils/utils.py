@@ -3,6 +3,7 @@ from collections import defaultdict
 from google.cloud import secretmanager
 from utils.config import PROJECT_ID, TELEGRAM_CHAT_ID, TELEGRAM_URL, MAX_PICKS
 import os
+import pandas as pd
 import hashlib
 from typing import List, Dict, Tuple
 
@@ -80,11 +81,14 @@ def validate_pick(player_pick: Dict, existing_picks: List[Dict]) -> Tuple[bool, 
     :return: True if the pick is valid, False otherwise. With an error message if invalid.
     """
     # Can't pick someone that has been picked already
+    print(player_pick)
+    print(existing_picks)
+
     if player_pick["name"] in existing_picks:
         return False, f"{player_pick['name']} has already been picked!"
     
     # Count how many of each pick we have
-    freq = defaultdict(GK=0, DF=0, MF=0, FW=0)
+    freq = defaultdict(Goalkeeper=0, Defender=0, Midfielder=0, Attacker=0)
     for existing_pick in existing_picks:
         freq[existing_pick["position"]] += 1
 
@@ -96,3 +100,23 @@ def validate_pick(player_pick: Dict, existing_picks: List[Dict]) -> Tuple[bool, 
         return False, f"You can only pick {MAX_PICKS[player_pos]} {player_pos} players!"
 
     return True, ""
+
+
+def calculate_date_from(date: pd.Timestamp) -> str:
+    """
+    Calculate the date from a given date.
+
+    :param date: The date to calculate with.
+    :return: The calculated date_from as a string.
+    """
+    return date.strftime("%Y-%m-%d %H:%M:%S") if date else None
+
+
+def calculate_date_to(date: pd.Timestamp) -> str:
+    """
+    Calculate the date from a given date.
+
+    :param date: The date to calculate with.
+    :return: The calculated date_from as a string.
+    """
+    return date.strftime("%Y-%m-%d %H:%M:%S") if date else None

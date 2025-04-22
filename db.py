@@ -1,7 +1,8 @@
 import pandas as pd
-from utils.utils import send_telegram_message
+from utils.utils import send_telegram_message, calculate_date_from, calculate_date_to
 from utils.config import NUM_PLAYERS, ALL_EVENTS
-from utils.api import get_all_events_for_fixture, get_all_fixtures, get_all_teams, get_all_players
+import utils.api as fb_api
+from numpy import random
 
 
 def create_user(conn, name, password_hash, salt, hash_algo, iterations):
@@ -22,8 +23,6 @@ def get_user(conn, name):
     if ret is None:
         return None
     
-    print(ret)
-
     return {
         "user_id": ret[0], 
         "name": ret[1], 
@@ -34,12 +33,26 @@ def get_user(conn, name):
     }
 
 
+def get_all_user_ids(conn):
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT * FROM users")
+        users = cursor.fetchall()
+
+    return sorted([user[0] for user in users])
+
+
 def get_player_info(conn, name):
     with conn.cursor() as cursor:
         cursor.execute(f"SELECT * FROM players WHERE name = %s", (name,))
         record = cursor.fetchone()
 
-    return record
+    return {
+        "player_id": record[0], 
+        "name": record[1], 
+        "position": record[2], 
+        "headshot": record[3], 
+        "team_id": record[4]
+    }
 
 
 def get_all_players(conn):
@@ -64,7 +77,7 @@ def get_draft_order(conn):
 
         draft_order = []
         for item in draft_data:
-            draft_order.append({'Name': item['name'], 'Order': item['draft_id']})
+            draft_order.append({'Name': item[0], 'Order': item[1]})
 
     draft_order_df = pd.DataFrame(draft_order, columns=["Name", "Order"]).sort_values('Order')
 
@@ -103,7 +116,11 @@ def add_pick(conn, name, pick):
         cursor.execute(f"SELECT player_id FROM players where name = %s;", (pick,))
         player = cursor.fetchone()
 
-        cursor.execute(f"INSERT INTO picks (user_id, player_id) VALUES(%s, %s)", (user['user_id'], player['player_id']))
+        # Need to calculate correct date_from and date_to
+        date_from = calculate_date_from(pd.Timestamp.now())
+        date_to = calculate_date_to(pd.Timestamp.now())
+
+        cursor.execute(f"INSERT INTO picks (user_id, player_id, date_from, date_to) VALUES(%s, %s)", (user, player, date_from, date_to))
 
     conn.commit()
 
@@ -185,27 +202,29 @@ def get_all_player_points(conn):
     ).sort_values('TotalPoints', ascending=False)
 
 
-def set_draft_order(conn, order):
-    """Set the draft order"""
+def set_draft_order(conn):
+    """Set the draft order for all existing users"""
     with conn.cursor() as cursor:
 
         # Delete any existing draft orders
-        cursor.execute(f"DELETE * FROM draft;")
+        cursor.execute(f"DELETE FROM draft;")
+
+        # Get all users
+        user_ids = get_all_user_ids(conn)
+        if len(user_ids) != NUM_PLAYERS:
+            return f"Number of users is not equal to {NUM_PLAYERS}!"
+        
+        # generate a random draft order
+        order = random.permutation(NUM_PLAYERS) + 1
+        order = {order[i]: user_ids[i] for i in range(len(order))}
 
         # Now add the new order
-        to_add = []
-        for order, name in order.items():
-            cursor.execute(f"SELECT user_id FROM users where name = {name}")
-            user = cursor.fetchone()
+        draft_str = [f"({ord}, {user})" for ord, user in order.items()]
+        cursor.execute("INSERT INTO draft (draft_id, user_id) VALUES " + ",".join(draft_str))
 
-            if not user:
-                raise ValueError(f"No user with name {name}!")
+        conn.commit()
 
-            to_add.append(f"VALUES({order}, {user['user_id']})")
-
-    cursor.execute("INSERT INTO draft (draft_id, user_id) " + ",".join(to_add))
-
-    conn.commit()
+    return "Draft order set successfully!"
 
 def get_standings(conn):
     """Get the current standings"""
@@ -252,7 +271,7 @@ def get_live_games(conn, current_time: pd.Timestamp):
 
 def update_points_for_fixture(conn, fixture_id):
     """Check if there are new events for the given fixture and update database accordingly"""
-    events = get_all_events_for_fixture(fixture_id)
+    events = fb_api.get_all_events_for_fixture(fixture_id)
     with conn.cursor() as cursor:
         cursor.execute(f"SELECT MAX(event_time) FROM points WHERE fixture_id = %s", (fixture_id,))
         latest_event = cursor.fetchall()
@@ -277,7 +296,7 @@ def refresh_data(conn):
         update_points_for_fixture(conn, fixture_id)
 
 
-def initialize_tables(conn, refresh=False):
+def initialize_tables(conn, league_id, year, refresh=False):
     """Create all tables if they do not exist, needs to be run before Draft can start and will likely max out API calls"""
     with conn.cursor() as cursor:
 
@@ -295,31 +314,50 @@ def initialize_tables(conn, refresh=False):
         events = cursor.fetchone()
 
         if (games or teams or players or events) and not refresh:
-            print("Tables already exist, will not continue unless `refresh` is set to True")
-            return
+            return "Tables already exist, will not continue unless `refresh` is set to True."
 
         # Now create the tables
-        all_fixtures_df = get_all_fixtures(), 
-        all_teams_df = get_all_teams(), 
-        all_players_df = get_all_players(all_teams_df['team_id'].tolist())
+        all_fixtures_df = fb_api.get_all_fixtures(league_id, year)
+        print(f"Found {len(all_fixtures_df)} fixtures, Now getting teams information...")
+
+        all_teams_df = fb_api.get_all_teams(league_id, year)
+        print(f"Found {len(all_teams_df)} teams, now getting players information...")
+
+        all_players_df = fb_api.get_all_players(all_teams_df['team_id'].tolist())
+        print(f"Found {len(all_players_df)} players")
+
+        print(f"Updating tables...")
 
         all_fixtures_df = all_fixtures_df.merge(all_teams_df, left_on='home_team_name', right_on='name', how='left')
         all_fixtures_df.rename(columns={"team_id": "home_team_id"}, inplace=True)
         all_fixtures_df = all_fixtures_df.merge(all_teams_df, left_on='away_team_name', right_on='name', how='left')
         all_fixtures_df.rename(columns={"team_id": "away_team_id"}, inplace=True)
         all_fixtures_df = all_fixtures_df[['fixture_id', 'home_team_id', 'away_team_id', 'start_time']]
-        all_fixtures_df["start_time"] = all_fixtures_df["start_time"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+        all_fixtures_df["start_time"] = all_fixtures_df["start_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
         
         all_teams_df = all_teams_df[['team_id', 'name', 'logo']]
 
-        all_fixtures = [tuple(x) for x in all_fixtures_df.to_numpy()]
-        all_teams = [tuple(x) for x in all_teams_df.to_numpy()]
-        all_players = [tuple(x) for x in all_players_df.to_numpy()]
+        all_fixtures = [str(tuple(x)) for x in all_fixtures_df.to_numpy()]
+        all_teams = [str(tuple(x)) for x in all_teams_df.to_numpy()]
+        all_players = [str(tuple(x)) for x in all_players_df.to_numpy()]
         
-        cursor.execute("INSERT INTO games (game_id, home_team_id, away_team_id, start_time) VALUES (%s, %s, %s, %s)", all_fixtures)
-        cursor.execute("INSERT INTO teams (team_id, name, logo) VALUES (%s, %s, %s)", all_teams)
-        cursor.execute("INSERT INTO players (player_id, name, position, headshot, team_id) VALUES (%s, %s, %s, %s, %s)", all_players)
-        cursor.execute("INSERT INTO events (name, position, value) VALUES (%s, %s, %s)", ALL_EVENTS)
+        cursor.execute("DELETE FROM games;")
+        cursor.execute("INSERT INTO games (game_id, home_team_id, away_team_id, start_time) VALUES " + ",".join(all_fixtures))
+        print("Updated games table")
+
+        cursor.execute("DELETE FROM teams;")
+        cursor.execute("INSERT INTO teams (team_id, name, logo) VALUES " + ",".join(all_teams))
+        print("Updated teams table")
+
+        cursor.execute("DELETE FROM players;")
+        cursor.execute("INSERT INTO players (player_id, name, position, headshot, team_id) VALUES " + ",".join(all_players))
+        print("Updated players table")
+
+        cursor.execute("DELETE FROM events;")
+        cursor.execute("INSERT INTO events (name, position, value) VALUES " + ",".join([str(event) for event in ALL_EVENTS]))
+        print("Updated events table")
 
         conn.commit()
+
+    return "Tables created successfully!"
 

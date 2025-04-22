@@ -8,8 +8,10 @@ TELEGRAM_URL = "https://api.telegram.org/bot7829344666:AAGLCcj0F4lIvpiRGvyBsIE0g
 
 API_URL = "https://v3.football.api-sports.io/"
 
+# This are just to note, not used in the code
 YEAR = 2022
 
+# These are just to note, they are not used in the code
 PREMIER_LEAGUE_LEAGUE_ID = 39
 WORLD_CUP_LEAGUE_ID = 1
 

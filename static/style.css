@@ -25,44 +25,44 @@ body {
   border: 1px solid #ddd;
   margin-bottom: 12px;
 }
-.login, .register, .pick, .unpick {
+.login, .register, .pick, .unpick, .setup {
   	width: min(500px, 80%);
   	background-color: #ffffff;
   	box-shadow: 0 0 9px 0 rgba(0, 0, 0, 0.3);
   	margin: auto
 }
-.login h1, .register h1, .pick h1, .unpick h1 {
+.login h1, .register h1, .pick h1, .unpick h1, .setup h1 {
   	text-align: center;
   	color: #5b6574;
   	font-size: 24px;
   	padding: 20px 0 20px 0;
   	border-bottom: 1px solid #dee0e4;
 }
-.login .links, .register .links, .pick .links, .unpick .links {
+.login .links, .register .links, .pick .links, .unpick .links, .setup .links {
   	display: flex;
   	padding: 0 15px;
 }
-.login .links a, .register .links a, .pick .links a, .unpick .links a {
+.login .links a, .register .links a, .pick .links a, .unpick .links a, .setup .links a {
   	color: #adb2ba;
   	text-decoration: none;
   	display: inline-flex;
   	padding: 0 10px 10px 10px;
   	font-weight: bold;
 }
-.login .links a:hover, .register .links a:hover, .pick .links a:hover, .unpick .links a:hover {
+.login .links a:hover, .register .links a:hover, .pick .links a:hover, .unpick .links a:hover, .setup .links a:hover {
   	color: #9da3ac;
 }
-.login .links a.active, .register .links a.active, .pick .links a.active, .unpick .links a.active {
+.login .links a.active, .register .links a.active, .pick .links a.active, .unpick .links a.active, .setup .links a.active {
   	border-bottom: 3px solid #ADD8E6;
   	color: #ADD8E6;
 }
-.login form, .register form, .pick form, .unpick form {
+.login form, .register form, .pick form, .unpick form, .setup form {
   	display: flex;
   	flex-wrap: wrap;
   	justify-content: center;
   	padding-top: 20px;
 }
-.login form label, .register form label, .pick form label, .unpick form label {
+.login form label, .register form label, .pick form label, .unpick form label, .setup form label {
   	display: flex;
   	justify-content: center;
   	align-items: center;
@@ -71,14 +71,14 @@ body {
   	background-color: #ADD8E6;
   	color: #ffffff;
 }
-.login form input[type="password"], .login form input[type="text"], .register form input[type="password"], .register form input[type="text"], .pick form input[type="text"], .unpick form input[type="text"] {
+.login form input[type="password"], .login form input[type="text"], .register form input[type="password"], .register form input[type="text"], .pick form input[type="text"], .unpick form input[type="text"], .setup form input[type="text"] {
   	width: 80%;
   	height: 50px;
   	border: 1px solid #dee0e4;
   	margin-bottom: 20px;
   	padding: 0 15px;
 }
-.login form input[type="submit"], .register form input[type="submit"], .pick form input[type="submit"], .unpick form input[type="submit"] {
+.login form input[type="submit"], .register form input[type="submit"], .pick form input[type="submit"], .unpick form input[type="submit"], .setup form input[type="submit"] {
   	width: 100%;
   	padding: 15px;
   	margin-top: 20px;
@@ -89,7 +89,7 @@ body {
   	color: #ffffff;
   	transition: background-color 0.2s;
 }
-.login form input[type="submit"]:hover, .register form input[type="submit"]:hover, .pick form input[type="submit"]:hover, .unpick form input[type="submit"]:hover {
+.login form input[type="submit"]:hover, .register form input[type="submit"]:hover, .pick form input[type="submit"]:hover, .unpick form input[type="submit"]:hover, .setup form input[type="submit"]:hover {
   	background-color: #c1c4c8;
   	transition: background-color 0.2s;
 }
@@ -156,41 +156,6 @@ th {
 
 h1 {
   color: #f2f2f2;
-}
-
-.collapsible_picks {
-  background-color: #ADD8E6;
-  color: white;
-  cursor: pointer;
-  padding: 18px;
-  width: 100%;
-  border: none;
-  text-align: left;
-  outline: none;
-}
-
-collapsible_picks.active, .collapsible_picks:hover {
-  background-color: #c1c4c8;
-}
-
-.collapsible_picks:after {
-  content: '\002B';
-  color: white;
-  font-weight: bold;
-  float: right;
-  margin-left: 5px;
-}
-
-collapsible_picks.active:after {
-  content: "\2212";
-}
-
-.pick_content {
-  padding: 0 18px;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.2s ease-out;
-  background-color: #f1f1f1;
 }
 
 .image-text-container {
