@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.utils import send_telegram_message, calculate_date_from, calculate_date_to
+from utils.utils import send_telegram_message
 from utils.config import NUM_PLAYERS, ALL_EVENTS
 import utils.api as fb_api
 from numpy import random
@@ -107,7 +107,18 @@ def remove_pick(conn, name, pick):
     conn.commit()
 
 
-def add_pick(conn, name, pick):
+
+def calculate_next_gameweek(date: pd.Timestamp) -> str:
+    """
+    Calculate the next gameweek from a given date.
+
+    :param date: The date to calculate with.
+    :return: The next gameweek.
+    """
+    return date.strftime("%Y-%m-%d %H:%M:%S") if date else None
+
+
+def add_draft_pick(conn, name, pick):
     with conn.cursor() as cursor:
 
         cursor.execute(f"SELECT user_id FROM users where name = %s;", (name,))
@@ -116,18 +127,15 @@ def add_pick(conn, name, pick):
         cursor.execute(f"SELECT player_id FROM players where name = %s;", (pick,))
         player = cursor.fetchone()
 
-        # Need to calculate correct date_from and date_to
-        date_from = calculate_date_from(pd.Timestamp.now())
-        date_to = calculate_date_to(pd.Timestamp.now())
-
-        cursor.execute(f"INSERT INTO picks (user_id, player_id, date_from, date_to) VALUES(%s, %s)", (user, player, date_from, date_to))
+        # Can default to 1 for draft picks.
+        cursor.execute(f"INSERT INTO picks (user_id, player_id, gameweek_id) VALUES(%s, %s, %s)", (user, player, 1))
 
     conn.commit()
 
     send_telegram_message(f"`{name}` has picked `{pick}`")
 
 
-def get_user_picks(conn, name):
+def get_user_gameweek_picks(conn, name, gameweek_id):
     with conn.cursor() as cursor:
         cursor.execute(f"""
             SELECT 
@@ -135,9 +143,28 @@ def get_user_picks(conn, name):
             FROM users u
                 INNER JOIN picks pi ON u.user_id = pi.user_id
                 INNER JOIN players pl ON pi.player_id = pl.player_id
-            WHERE u.name = %s;
+            WHERE u.name = %s
+            AND pi.gameweek_id = %s;
         """, 
-            (name,)
+            (name, gameweek_id)
+        )
+
+        picks = cursor.fetchall()
+
+    return picks
+
+
+def get_all_gameweek_picks(conn, gameweek_id):
+    with conn.cursor() as cursor:
+        cursor.execute(f"""
+            SELECT 
+                pl.* 
+            FROM users u
+                INNER JOIN picks pi ON u.user_id = pi.user_id
+                INNER JOIN players pl ON pi.player_id = pl.player_id
+            WHERE pi.gameweek_id = %s;
+        """, 
+            (gameweek_id,)
         )
 
         picks = cursor.fetchall()
@@ -160,7 +187,7 @@ def get_next_to_pick(conn, draft_order):
 
         all_picks = []
         for item in picks:
-            all_picks.append({'Name': item['name'], 'Player': item['player_name']})
+            all_picks.append({'Name': item[0], 'Player': item[1]})
 
     next_to_pick = draft_order.loc[len(all_picks)].Name
 
@@ -231,16 +258,19 @@ def get_standings(conn):
     with conn.cursor() as cursor:
         cursor.execute(
             f"""
-            SELECT 
-                u.name,
-                sum(e.value) as points
-            FROM users u
-                INNER JOIN picks pi ON pi.user_id = u.user_id
-                INNER JOIN players pl on pl.player_id = pi.player_id
-                INNER JOIN points po on po.player_id = pl.player_id
-                INNER JOIN events e on e.event_id = po.event_id
-            WHERE po.event_time BETWEEN pi.date_from AND pi.date_to
-            GROUP BY u.name
+                SELECT 
+                    u.name,
+                    gw.gameweek_id,
+                    pl.name as player_name,
+                    pl.position,
+                    IFNULL(sum(e.value), 0) as points
+                FROM users u
+                    INNER JOIN picks pi ON pi.user_id = u.user_id
+                    INNER JOIN gameweeks gw on gw.gameweek_id = pi.gameweek_id
+                    INNER JOIN players pl on pl.player_id = pi.player_id
+                    LEFT JOIN points po on po.player_id = pl.player_id
+                    LEFT JOIN events e on e.event_id = po.event_id
+                GROUP BY u.name, player_name, gw.gameweek_id, position
             """
         )
         data = cursor.fetchall()
@@ -320,6 +350,10 @@ def initialize_tables(conn, league_id, year, refresh=False):
         all_fixtures_df = fb_api.get_all_fixtures(league_id, year)
         print(f"Found {len(all_fixtures_df)} fixtures, Now getting teams information...")
 
+        all_gameweeks_df = all_fixtures_df.groupby(["gameweek_id", "round"]).agg({"start_time": "min"}).reset_index()
+        all_gameweeks_df["start_time"] = all_gameweeks_df["start_time"].dt.floor("D")
+        all_gameweeks_df['end_time'] = all_gameweeks_df['start_time'].shift(-1).fillna(pd.to_datetime("2200-01-01"))
+
         all_teams_df = fb_api.get_all_teams(league_id, year)
         print(f"Found {len(all_teams_df)} teams, now getting players information...")
 
@@ -332,28 +366,33 @@ def initialize_tables(conn, league_id, year, refresh=False):
         all_fixtures_df.rename(columns={"team_id": "home_team_id"}, inplace=True)
         all_fixtures_df = all_fixtures_df.merge(all_teams_df, left_on='away_team_name', right_on='name', how='left')
         all_fixtures_df.rename(columns={"team_id": "away_team_id"}, inplace=True)
-        all_fixtures_df = all_fixtures_df[['fixture_id', 'home_team_id', 'away_team_id', 'start_time']]
+        all_fixtures_df = all_fixtures_df[['fixture_id', 'home_team_id', 'away_team_id', 'start_time', 'gameweek_id']]
         all_fixtures_df["start_time"] = all_fixtures_df["start_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
         
         all_teams_df = all_teams_df[['team_id', 'name', 'logo']]
 
         all_fixtures = [str(tuple(x)) for x in all_fixtures_df.to_numpy()]
+        all_gameweeks = [str(tuple(x)) for x in all_gameweeks_df.to_numpy()]
         all_teams = [str(tuple(x)) for x in all_teams_df.to_numpy()]
         all_players = [str(tuple(x)) for x in all_players_df.to_numpy()]
         
-        cursor.execute("DELETE FROM games;")
-        cursor.execute("INSERT INTO games (game_id, home_team_id, away_team_id, start_time) VALUES " + ",".join(all_fixtures))
+        cursor.execute("TRUNCATE TABLE games;")
+        cursor.execute("INSERT INTO games (game_id, home_team_id, away_team_id, start_time, gameweek_id) VALUES " + ",".join(all_fixtures))
         print("Updated games table")
 
-        cursor.execute("DELETE FROM teams;")
+        cursor.execute("TRUNCATE TABLE gameweeks;")
+        cursor.execute("INSERT INTO gameweeks (gameweek_id, name, start_time, end_time) VALUES " + ",".join(all_gameweeks))
+        print("Updated games table")
+
+        cursor.execute("TRUNCATE TABLE teams;")
         cursor.execute("INSERT INTO teams (team_id, name, logo) VALUES " + ",".join(all_teams))
         print("Updated teams table")
 
-        cursor.execute("DELETE FROM players;")
+        cursor.execute("TRUNCATE TABLE players;")
         cursor.execute("INSERT INTO players (player_id, name, position, headshot, team_id) VALUES " + ",".join(all_players))
         print("Updated players table")
 
-        cursor.execute("DELETE FROM events;")
+        cursor.execute("TRUNCATE TABLE events;")
         cursor.execute("INSERT INTO events (name, position, value) VALUES " + ",".join([str(event) for event in ALL_EVENTS]))
         print("Updated events table")
 

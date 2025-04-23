@@ -8,7 +8,7 @@ Notes:
 
 import requests
 import pandas as pd
-from utils.config import API_URL
+from utils.config import API_URL, GAMEWEEKS
 from utils.utils import get_cloud_secret
 from typing import List
 from time import sleep
@@ -49,12 +49,18 @@ def get_all_fixtures(league_id, year) -> pd.DataFrame:
             "fixture_id": fixture["fixture"]["id"],
             "start_time": fixture["fixture"]["date"],
             "home_team_name": fixture["teams"]["home"]["name"],
-            "away_team_name": fixture["teams"]["away"]["name"]
+            "away_team_name": fixture["teams"]["away"]["name"],
+            "round": fixture["league"]["round"],
         })
 
     all_fixtures_df = pd.DataFrame(all_fixtures)
     all_fixtures_df['start_time'] = pd.to_datetime(all_fixtures_df['start_time'])
     all_fixtures_df['start_time'] = all_fixtures_df['start_time'].dt.tz_convert('Europe/London').dt.tz_localize(None)
+
+    all_fixtures_df["gameweek_id"] = all_fixtures_df["round"].map(GAMEWEEKS)
+    
+    if all_fixtures_df["gameweek_id"].isnull().any():
+        raise ValueError(f"Some fixtures do not have a gameweek id. Please check the fixtures data. Unique round names are {all_fixtures_df['round'].unique()}")
 
     return all_fixtures_df
 
@@ -81,7 +87,7 @@ def get_all_teams(league_id, year):
 def get_all_players(team_ids: List) -> pd.DataFrame:
     """Get all players for the given team id's"""
     all_players = []
-    for team_id in team_ids[:5]:
+    for team_id in team_ids:
         sleep(10) # To avoid hitting the API rate limit
         response = requests.request("GET", API_URL + f"players/squads?team={team_id}", headers=HEADERS)
         players = response.json()['response'][0]['players']

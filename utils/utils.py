@@ -50,73 +50,35 @@ def create_path_to_image_html(row):
     """
 
 
-# def get_data():
-    # data = json.loads(requests.get("https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard").content)
-    # competitors = data['events'][0]['competitions'][0]['competitors']
-
-    # output = []
-    # for comp in competitors:
-    #     name = comp['athlete']['displayName']
-    #     pos = comp['status']['position']['displayName']
-    #     score = comp['statistics'][0]['displayValue']
-    #     thru = comp['status'].get('displayThru', "0").replace("*", "")
-    #     headshot = comp['athlete']['headshot']['href']
-
-    #     if thru == "18":
-    #         for round_score in comp["linescores"]:
-    #             thru = round_score.get('value', thru)
-
-    #     output.append({'name': name, 'headshot': headshot, 'pos': pos, 'thru': int(thru), 'score': score})
-
-    # return output
-
-
-
-def validate_pick(player_pick: Dict, existing_picks: List[Dict]) -> Tuple[bool, str]:
+def validate_pick(player_pick: Dict, user_existing_picks: List[Dict], all_existing_picks: List[Dict]) -> Tuple[bool, str]:
     """
     Validate if the player pick is already in the existing picks.
 
     :param player_pick: The player pick to validate.
-    :param existing_picks: List of existing picks.
+    :param user_existing_picks: List of existing picks for this player.
+    :param all_existing_picks: List of all existing picks.
     :return: True if the pick is valid, False otherwise. With an error message if invalid.
     """
     # Can't pick someone that has been picked already
     print(player_pick)
-    print(existing_picks)
+    print(user_existing_picks)
+    print(all_existing_picks)
 
-    if player_pick["name"] in existing_picks:
+    all_existing_pick_names = [pick[1] for pick in all_existing_picks]
+
+    if player_pick["name"] in all_existing_pick_names:
         return False, f"{player_pick['name']} has already been picked!"
     
     # Count how many of each pick we have
     freq = defaultdict(Goalkeeper=0, Defender=0, Midfielder=0, Attacker=0)
-    for existing_pick in existing_picks:
-        freq[existing_pick["position"]] += 1
+    for existing_pick in user_existing_picks:
+        freq[existing_pick[2]] += 1
 
     # Check if the player pick is valid based on the allowed positions
     player_pos = player_pick["position"]
     num_existing_pos_picks = freq[player_pos]
     
     if num_existing_pos_picks >= MAX_PICKS[player_pos]:
-        return False, f"You can only pick {MAX_PICKS[player_pos]} {player_pos} players!"
+        return False, f"You can only pick a maximum of {MAX_PICKS[player_pos]} {player_pos}(s)"
 
     return True, ""
-
-
-def calculate_date_from(date: pd.Timestamp) -> str:
-    """
-    Calculate the date from a given date.
-
-    :param date: The date to calculate with.
-    :return: The calculated date_from as a string.
-    """
-    return date.strftime("%Y-%m-%d %H:%M:%S") if date else None
-
-
-def calculate_date_to(date: pd.Timestamp) -> str:
-    """
-    Calculate the date from a given date.
-
-    :param date: The date to calculate with.
-    :return: The calculated date_from as a string.
-    """
-    return date.strftime("%Y-%m-%d %H:%M:%S") if date else None

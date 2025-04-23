@@ -8,13 +8,52 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css">
     <head>
         <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+        
+        <style>
+            .ribbon a {
+                margin: 0 5px;
+                text-decoration: none;
+                padding: 6px 12px;
+                border-radius: 5px;
+                background-color: #eee;
+                color: #333;
+            }
+            .ribbon a.active {
+                background-color: #007BFF;
+                color: white;
+                font-weight: bold;
+            }
+            .team {
+                border: 1px solid #ccc;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 10px;
+            }
+        </style>
     </head>
     <body>
     <div>
-        <h1>Standings</h1>
-        <div class="standings-container">
-            {{ total_points|safe }}
+        <h1>Gameweek {{ gameweek }}</h1>
+        <div class="ribbon">
+            {% for gw in range(1, 9) %}
+                <a href="/standings?gameweek={{ gw }}" class="{{ 'active' if gw == gameweek else '' }}">
+                    GW{{ gw }}
+                </a>
+            {% endfor %}
         </div>
+
+
+        {% for team in standings %}
+            <div class="standings-container">
+                <h2>{{ team.name }}</h2>
+                <ul>
+                    {% for player in team.player_name %}
+                        <li>{{ player }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+
     </div>
     </body>
 </html>

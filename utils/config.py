@@ -54,3 +54,14 @@ MAX_PICKS = {
     "Midfielder": 5,
     "Attacker": 3
 }
+
+GAMEWEEKS = {
+    'Group Stage - 1': 1, 
+    'Group Stage - 2': 2, 
+    'Group Stage - 3': 3,
+    'Round of 16': 4, 
+    'Quarter-finals': 5, 
+    'Semi-finals': 6, 
+    '3rd Place Final': 7,
+    'Final': 8
+}

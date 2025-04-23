@@ -16,28 +16,28 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `picks`
+-- Table structure for table `gameweeks`
 --
 
-DROP TABLE IF EXISTS `picks`;
+DROP TABLE IF EXISTS `gameweeks`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `picks` (
-  `pick_id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `player_id` int NOT NULL,
+CREATE TABLE `gameweeks` (
   `gameweek_id` int NOT NULL,
-  PRIMARY KEY (`pick_id`)
+  `name` VARCHAR(45) NOT NULL,
+  `start_time` DATETIME NOT NULL,
+  `end_time` DATETIME NOT NULL,
+  PRIMARY KEY (`gameweek_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `picks`
+-- Dumping data for table `gameweeks`
 --
 
-LOCK TABLES `picks` WRITE;
-/*!40000 ALTER TABLE `picks` DISABLE KEYS */;
-/*!40000 ALTER TABLE `picks` ENABLE KEYS */;
+LOCK TABLES `gameweeks` WRITE;
+/*!40000 ALTER TABLE `gameweeks` DISABLE KEYS */;
+/*!40000 ALTER TABLE `gameweeks` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

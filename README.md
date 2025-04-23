@@ -41,12 +41,11 @@ This repository contains the source code for a **Football Draft Website**, a web
 
 ### To Do
 
-- Implement Draft picking logic such that date_to and date_from are correctly set
-- Create gameweek tables in SQL and include in initialization, possibly automate creation of these
-- Setup transfer page with correct handling of dates
+- Show standings page nicely
+- Show events page nicely
+- Keep track of what teams everyone has for each gameweek and be able to view each gameweek team separately
+- Setup transfer page with correct handling of which gameweek to set
 - Set up job to get all events for live football games and update points table as required
-- Show standings nicely
-- Show events nicely
 - Add rules page
 - Tidy up icons used
 - Add page to show past and future fixtures, split into game weeks, update with score and scorers etc when available using widghets

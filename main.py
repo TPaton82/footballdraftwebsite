@@ -169,21 +169,22 @@ def pick():
             msg = f"It's not your pick, wait for `{next_to_pick}` to pick"
 
         else:
-            # Check to see if we are allowed to pick this player
+            # Check to see if we are allowed to pick this player (use gameweek 1 since this is the draft)
             player_info = db.get_player_info(mysql.connection, request.form['player'])
-            player_existing_picks = db.get_user_picks(mysql.connection, session["username"])
-            valid_pick, error_reason = validate_pick(player_info, player_existing_picks)
+            player_existing_picks = db.get_user_gameweek_picks(mysql.connection, session["username"], 1)
+            all_existing_picks = db.get_all_gameweek_picks(mysql.connection, 1)
+            valid_pick, error_reason = validate_pick(player_info, player_existing_picks, all_existing_picks)
 
             if not valid_pick:
                 msg = error_reason
             else:
-                db.add_pick(mysql.connection, session["username"], player_info["name"])
+                db.add_draft_pick(mysql.connection, session["username"], player_info["name"])
 
                 next_to_pick = db.get_next_to_pick(mysql.connection, draft_order)
                 if next_to_pick is not None:
                     send_telegram_message(f"Waiting for `{next_to_pick}` to pick...")
 
-                return redirect(url_for("leaderboard"))
+                return redirect(url_for("standings"))
 
     all_players = db.get_all_players(mysql.connection)
 
@@ -251,13 +252,16 @@ def players():
 @logged_in
 def standings():
     """Create standings page"""
-    #refresh_data(mysql.connection)
-
+    gameweek = int(request.args.get("gameweek", 1))
     standings = db.get_standings(mysql.connection)
+
+    # Group players by username to show each user's team
+    grouped = standings.groupby("name").apply(list).reset_index()
 
     return render_template(
         template_name_or_list="standings.html",
-        total_points=standings.to_html(
+        gameweek=gameweek,
+        standings=grouped.to_html(
             index=False,
             escape=False,
             classes='standings'
