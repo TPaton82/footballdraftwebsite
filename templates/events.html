@@ -18,23 +18,26 @@
     </body>
     <script>
         function eventSelector() {
-          // Declare variables
-          var input, filter, table, tr, td, i, txtValue;
-          input = document.getElementById("eventSelector");
+          const input = document.getElementById("eventSelector");
           filter = input.value.toUpperCase();
-          table = document.getElementById("events");
-          tr = table.getElementsByTagName("tr");
+          const table = document.getElementById("events");
+          const rows = table.getElementsByTagName("tr");
 
-          // Loop through all table rows, and hide those who don't match the search query
-          for (i = 0; i < tr.length; i++) {
-            td = tr[i].getElementsByTagName("td")[0];
-            if (td) {
-              txtValue = td.textContent || td.innerText;
-              if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-              } else {
-                tr[i].style.display = "none";
-              }
+          for (let i = 1; i < rows.length; i++) { // skip header row
+            const cells = rows[i].getElementsByTagName("td");
+            const user = cells[0].textContent.toLowerCase();
+            const player = cells[1].textContent.toLowerCase();
+            const eventType = cells[2].textContent.toLowerCase();
+
+            const userMatch = user.includes(filter.toLowerCase());
+            const playerMatch = player.includes(filter.toLowerCase());
+            const eventTypeMatch = eventType.includes(filter.toLowerCase());
+
+            // Show row if EITHER filter matches
+            if (userMatch || playerMatch || eventTypeMatch) {
+              rows[i].style.display = "";
+            } else {
+              rows[i].style.display = "none";
             }
           }
         }

@@ -1,4 +1,5 @@
 NUM_PLAYERS = 5
+NUM_PICKS = 11
 
 PROJECT_ID = "168510284961"
 
@@ -53,6 +54,13 @@ MAX_PICKS = {
     "Defender": 5,
     "Midfielder": 5,
     "Attacker": 3
+}
+
+MIN_PICKS = {
+    "Goalkeeper": 1,
+    "Defender": 3,
+    "Midfielder": 3,
+    "Attacker": 1
 }
 
 GAMEWEEKS = {

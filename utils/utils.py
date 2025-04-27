@@ -1,7 +1,7 @@
 import requests
 from collections import defaultdict
 from google.cloud import secretmanager
-from utils.config import PROJECT_ID, TELEGRAM_CHAT_ID, TELEGRAM_URL, MAX_PICKS
+from utils.config import PROJECT_ID, TELEGRAM_CHAT_ID, TELEGRAM_URL, MAX_PICKS, MIN_PICKS
 import os
 import pandas as pd
 import hashlib
@@ -80,5 +80,11 @@ def validate_pick(player_pick: Dict, user_existing_picks: List[Dict], all_existi
     
     if num_existing_pos_picks >= MAX_PICKS[player_pos]:
         return False, f"You can only pick a maximum of {MAX_PICKS[player_pos]} {player_pos}(s)"
+
+    # If this is the last pick, check if we have the minimum picks for all positions
+    if len(user_existing_picks) == 10:
+        for pos, min_pick in MIN_PICKS.items():
+            if freq[pos] < min_pick and player_pos != pos:
+                return False, f"You need to pick a {pos}!"
 
     return True, ""

@@ -183,6 +183,9 @@ def pick():
                 next_to_pick = db.get_next_to_pick(mysql.connection, draft_order)
                 if next_to_pick is not None:
                     send_telegram_message(f"Waiting for `{next_to_pick}` to pick...")
+                else:
+                    send_telegram_message("The draft is complete. Good luck!")
+
 
                 return redirect(url_for("standings"))
 
@@ -212,12 +215,40 @@ def events():
         )
     )
 
-@app.route("/transfer")
+@app.route("/transfer", methods=['GET', 'POST'])
 @logged_in
 def transfer():
+
     msg = ""
+    next_gameweek = db.get_next_gameweek(mysql.connection)
+
+    if request.method == 'POST':
+        if 'player_in' in request.form and 'player_out' in request.form:
+
+            # Get the users team for the next gameweek
+            player_existing_picks = db.get_user_gameweek_picks(mysql.connection, session["username"], next_gameweek)
+
+            # get info about the player we are transferring in and out
+            player_out_info = db.get_player_info(mysql.connection, request.form['player_out'])
+            player_in_info = db.get_player_info(mysql.connection, request.form['player_in'])
+
+            # Get all existing picks for all teams, and validate this transfer (after removing the player we are transferring out)
+            all_existing_picks = db.get_all_gameweek_picks(mysql.connection, next_gameweek)
+            player_existing_picks = [pick for pick in player_existing_picks if pick[1] != player_out_info["name"]]
+            valid_pick, error_reason = validate_pick(player_in_info, player_existing_picks, all_existing_picks)
+
+            if not valid_pick:
+                msg = error_reason
+            else:
+                db.make_transfer(mysql.connection, session["username"], player_in_info["name"], player_out_info["name"], next_gameweek)
+                return redirect(url_for("standings"))
+        else:
+            msg = "Please select a player to transfer in and out!"
+
+    user_players = db.get_user_gameweek_picks(mysql.connection, session["username"], next_gameweek)
+    user_players = sorted([player[1] for player in user_players])
     all_players = db.get_all_players(mysql.connection)
-    return render_template(template_name_or_list="transfer.html", players=all_players, msg=msg)
+    return render_template(template_name_or_list="transfer.html", user_players=user_players, players=all_players, msg=msg)
 
 
 @app.route("/rules")
@@ -248,24 +279,24 @@ def players():
     )
 
 
-@app.route("/standings")
+@app.route("/standings", methods=['GET', 'POST'])
 @logged_in
 def standings():
     """Create standings page"""
     gameweek = int(request.args.get("gameweek", 1))
     standings = db.get_standings(mysql.connection)
+    standings = standings[standings["Gameweek"] == gameweek]
 
-    # Group players by username to show each user's team
-    grouped = standings.groupby("name").apply(list).reset_index()
+    # Group by name and aggregate player dicts
+    gameweek_standings = []
+    for name, df in standings.groupby("Name"):
+        players = df[["Player", "Position", "Headshot", "Points"]].to_dict(orient="records")
+        gameweek_standings.append({"Name": name, "players": players, "TotalPoints": df["Points"].sum()})
 
     return render_template(
         template_name_or_list="standings.html",
         gameweek=gameweek,
-        standings=grouped.to_html(
-            index=False,
-            escape=False,
-            classes='standings'
-        ).replace('border="1"', 'border="0"')
+        gameweek_standings=gameweek_standings
     )
 
 

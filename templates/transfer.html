@@ -9,16 +9,24 @@
         <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     </head>
     <body>
-        <div class="transfer">
-            <h1>Pick Your Player</h1>
+        <div class="pick">
+            <h1>Make Your Transfer</h1>
             <form action="{{ url_for('transfer') }}" method="post">
 
-                <label for="player">
+                <label for="player_out">
+                    <i class="fa-solid fa-user-minus"></i>
+                </label>
+                <input type="text", list="player_out" name="player_out" placeholder="Transfer Out" required>
+                <datalist id="player_out">
+                    {% for player in user_players %}
+                        <option value="{{ player }}">
+                    {% endfor %}
+                </datalist>
+                <label for="player_in">
                     <i class="fas fa-user-plus"></i>
                 </label>
-                <input type="text", list="player" name="player_out" placeholder="Transfer Out" required>
-                <input type="text", list="player" name="player_in" placeholder="Transfer In" required>
-                <datalist id="player">
+                <input type="text", list="player_in" name="player_in" placeholder="Transfer In" required>
+                <datalist id="player_in">
                     {% for player in players %}
                         <option value="{{ player }}">
                     {% endfor %}

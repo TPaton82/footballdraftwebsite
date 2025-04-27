@@ -16,7 +16,16 @@ body {
     height: 100%;
     overflow-x: hidden;
 }
-#playerSelector {
+#playerSelector{
+  background-image: url('/static/searchicon.png');
+  background-position: 10px 12px;
+  background-repeat: no-repeat;
+  width: 94%;
+  padding: 12px 20px 12px 40px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+}
+#eventSelector {
   background-image: url('/static/searchicon.png');
   background-position: 10px 12px;
   background-repeat: no-repeat;
@@ -168,6 +177,11 @@ h1 {
 }
 
 .players-container {
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.events-container {
   max-height: 75vh;
   overflow-y: auto;
 }

@@ -1,6 +1,6 @@
 import pandas as pd
 from utils.utils import send_telegram_message
-from utils.config import NUM_PLAYERS, ALL_EVENTS
+from utils.config import NUM_PLAYERS, NUM_PICKS, ALL_EVENTS
 import utils.api as fb_api
 from numpy import random
 
@@ -82,7 +82,7 @@ def get_draft_order(conn):
     draft_order_df = pd.DataFrame(draft_order, columns=["Name", "Order"]).sort_values('Order')
 
     full_draft_order = []
-    for idx in range(1, NUM_PLAYERS + 1, 1):
+    for idx in range(1, NUM_PICKS + 1, 1):
         if idx % 2 == 0:
             full_draft_order.append(draft_order_df.sort_values("Order", ascending=False))
         else:
@@ -127,12 +127,35 @@ def add_draft_pick(conn, name, pick):
         cursor.execute(f"SELECT player_id FROM players where name = %s;", (pick,))
         player = cursor.fetchone()
 
-        # Can default to 1 for draft picks.
-        cursor.execute(f"INSERT INTO picks (user_id, player_id, gameweek_id) VALUES(%s, %s, %s)", (user, player, 1))
+        # For draft picks, insert the player into all gameweeks
+        cursor.execute(f"SELECT gameweek_id FROM gameweeks")
+        gameweeks = cursor.fetchall()
+        for gameweek in gameweeks:
+            cursor.execute(f"INSERT INTO picks (user_id, player_id, gameweek_id) VALUES(%s, %s, %s)", (user, player, gameweek))
 
     conn.commit()
 
     send_telegram_message(f"`{name}` has picked `{pick}`")
+
+
+def make_transfer(conn, name, player_in, player_out, gameweek_id):
+    with conn.cursor() as cursor:
+
+        cursor.execute(f"SELECT user_id FROM users where name = %s;", (name,))
+        user = cursor.fetchone()
+
+        cursor.execute(f"SELECT player_id FROM players where name = %s;", (player_in,))
+        player_in_id = cursor.fetchone()
+
+        cursor.execute(f"SELECT player_id FROM players where name = %s;", (player_out,))
+        player_out_id = cursor.fetchone()
+
+        # For draft picks, insert the player into all gameweeks
+        cursor.execute(f"UPDATE picks SET player_id = %s WHERE user_id = %s AND gameweek_id = %s AND player_id = %s", (player_in_id, user, gameweek_id, player_out_id))
+
+    conn.commit()
+
+    send_telegram_message(f"{name}: {player_out} out; {player_in} in")
 
 
 def get_user_gameweek_picks(conn, name, gameweek_id):
@@ -189,7 +212,10 @@ def get_next_to_pick(conn, draft_order):
         for item in picks:
             all_picks.append({'Name': item[0], 'Player': item[1]})
 
-    next_to_pick = draft_order.loc[len(all_picks)].Name
+    if len(all_picks) in draft_order.index:
+        next_to_pick = draft_order.loc[len(all_picks)].Name
+    else:
+        next_to_pick = None
 
     return next_to_pick
 
@@ -263,6 +289,7 @@ def get_standings(conn):
                     gw.gameweek_id,
                     pl.name as player_name,
                     pl.position,
+                    pl.headshot,
                     IFNULL(sum(e.value), 0) as points
                 FROM users u
                     INNER JOIN picks pi ON pi.user_id = u.user_id
@@ -270,23 +297,45 @@ def get_standings(conn):
                     INNER JOIN players pl on pl.player_id = pi.player_id
                     LEFT JOIN points po on po.player_id = pl.player_id
                     LEFT JOIN events e on e.event_id = po.event_id
-                GROUP BY u.name, player_name, gw.gameweek_id, position
+                GROUP BY u.name, player_name, gw.gameweek_id, position, headshot
             """
         )
         data = cursor.fetchall()
 
-        total_points = []
+        standings = []
         for item in data:
-            total_points.append({
-                'Name': item['name'], 
-                'TotalPoints': item['points']
+            standings.append({
+                'Name': item[0], 
+                'Gameweek': item[1], 
+                'Player': item[2], 
+                'Position': item[3], 
+                'Headshot': item[4], 
+                'Points': item[5]
             })
 
-    return pd.DataFrame(
-        total_points, 
-        columns=["Name", "TotalPoints"]
-    ).sort_values('TotalPoints', ascending=False)
+    return pd.DataFrame(standings).sort_values(['Gameweek', 'Points'], ascending=[True, False])
 
+def get_next_gameweek(conn):
+    """Get the next gameweek"""
+    with conn.cursor() as cursor:
+        cursor.execute(f"SELECT * FROM gameweeks")
+        all_gameweeks = cursor.fetchall()
+
+        # Get the current gameweek
+        current_time = pd.Timestamp.now()
+
+        # Check to see if we're not in the first gameweek
+        if current_time < all_gameweeks[0][2]:
+            next_gameweek = all_gameweeks[0][0]
+        else:
+            next_gameweek = None
+
+        # Then loop over all gameweeks to find the current one and plus 1
+        for gameweek in all_gameweeks:
+            if gameweek[2] <= current_time <= gameweek[3]:
+                next_gameweek = gameweek[0] + 1
+
+    return next_gameweek
 
 def get_live_games(conn, current_time: pd.Timestamp):
     with conn.cursor() as cursor:

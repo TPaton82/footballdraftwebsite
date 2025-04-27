@@ -41,13 +41,9 @@ This repository contains the source code for a **Football Draft Website**, a web
 
 ### To Do
 
-- Show standings page nicely
-- Show events page nicely
-- Keep track of what teams everyone has for each gameweek and be able to view each gameweek team separately
-- Setup transfer page with correct handling of which gameweek to set
+- Update Standings to show total, not just gameweeks
 - Set up job to get all events for live football games and update points table as required
-- Add rules page
-- Tidy up icons used
-- Add page to show past and future fixtures, split into game weeks, update with score and scorers etc when available using widghets
+- Add page to show past and future fixtures, split into game weeks, update with score and scorers etc when available using widgets
 - Telegram bot to send messages when it records points for a user
-- gameweeks: see if round information is available via API
+- Add rules page
+- Show events page nicely
